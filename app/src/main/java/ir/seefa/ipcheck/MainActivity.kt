@@ -1,5 +1,6 @@
 package ir.seefa.ipcheck
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -13,35 +14,20 @@ import ir.seefa.ipcheck.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import android.provider.ContactsContract
 import android.webkit.WebSettings
 import android.webkit.WebViewClient
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Locale
-
-data class IpInfo(
-    val ip: String,
-    val type: String,
-    val continent: String,
-    val continentCode: String,
-    val country: String,
-    val region: String,
-    val city: String,
-    val timezoneId: String,
-    val timezoneAbbr: String,
-    val org: String,
-    val isp: String,
-    val latitude: Double?,
-    val longitude: Double?
-)
+import ir.seefa.ipcheck.data.IpInfo
+import ir.seefa.ipcheck.data.IpRepository
+import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val prefs by lazy { getSharedPreferences("ipcheck_prefs", Context.MODE_PRIVATE) }
     private val phoneKey = "phone_number"
+    private val repository = IpRepository()
     private var lastInfo: IpInfo? = null
     private val requestContactsPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -70,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -131,12 +118,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun fetchIpInfoWithFallback(): IpInfo = withContext(Dispatchers.IO) {
-        // Primary: ipwho.is (full dataset)
-        runCatching { fetchFromIpWho() }.getOrElse { primaryError ->
-            // Fallback: api.ipify.org (IP only)
-            val ipOnly = fetchFromIpifyOrNull() ?: throw primaryError
-            ipOnly
-        }
+        repository.fetchWithFallback()
     }
 
     private fun buildLocationText(info: IpInfo): String {
@@ -182,13 +164,9 @@ class MainActivity : AppCompatActivity() {
         android.widget.Toast.makeText(this, getString(R.string.ip_copied), android.widget.Toast.LENGTH_SHORT).show()
     }
 
-    private fun JSONObject.optDoubleOrNull(key: String): Double? {
-        return if (has(key) && !isNull(key)) optDouble(key) else null
-    }
-
     private fun savePhoneNumber() {
         val phone = binding.phoneInput.text?.toString()?.trim().orEmpty()
-        prefs.edit().putString(phoneKey, phone).apply()
+        prefs.edit { putString(phoneKey, phone) }
         android.widget.Toast.makeText(this, getString(R.string.number_saved), android.widget.Toast.LENGTH_SHORT).show()
     }
 
@@ -284,78 +262,4 @@ class MainActivity : AppCompatActivity() {
         binding.mapView.loadUrl(url)
     }
 
-    private fun fetchFromIpWho(): IpInfo {
-        val url = URL("https://ipwho.is")
-        val connection = (url.openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 10000
-            readTimeout = 10000
-        }
-        try {
-            val responseCode = connection.responseCode
-            if (responseCode !in 200..299) {
-                throw IllegalStateException("Unexpected response: $responseCode")
-            }
-            val payload = connection.inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(payload)
-            if (!json.optBoolean("success", true)) {
-                val reason = json.optString("message").ifBlank { "Unknown error" }
-                throw IllegalStateException("ipwho.is error: $reason")
-            }
-            return IpInfo(
-                ip = json.optString("ip"),
-                type = json.optString("type"),
-                continent = json.optString("continent"),
-                continentCode = json.optString("continent_code"),
-                country = json.optString("country"),
-                region = json.optString("region"),
-                city = json.optString("city"),
-                timezoneId = json.optJSONObject("timezone")?.optString("id").orEmpty(),
-                timezoneAbbr = json.optJSONObject("timezone")?.optString("abbr").orEmpty(),
-                org = json.optString("org"),
-                isp = json.optString("isp"),
-                latitude = json.optDoubleOrNull("latitude"),
-                longitude = json.optDoubleOrNull("longitude")
-            )
-        } finally {
-            connection.disconnect()
-        }
-    }
-
-    private fun fetchFromIpifyOrNull(): IpInfo? {
-        return runCatching {
-            val url = URL("https://api.ipify.org?format=json")
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 10000
-                readTimeout = 10000
-            }
-            try {
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    throw IllegalStateException("Unexpected response: $responseCode")
-                }
-                val payload = connection.inputStream.bufferedReader().use { it.readText() }
-                val json = JSONObject(payload)
-                val ip = json.optString("ip")
-                if (ip.isBlank()) null else IpInfo(
-                    ip = ip,
-                    type = "",
-                    continent = "",
-                    continentCode = "",
-                    country = "",
-                    region = "",
-                    city = "",
-                    timezoneId = "",
-                    timezoneAbbr = "",
-                    org = "",
-                    isp = "",
-                    latitude = null,
-                    longitude = null
-                )
-            } finally {
-                connection.disconnect()
-            }
-        }.getOrNull()
-    }
 }

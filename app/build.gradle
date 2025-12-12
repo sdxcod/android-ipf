@@ -15,6 +15,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "IPWHO_URL", "\"https://ipwho.is\"")
+        buildConfigField("String", "IPIFY_URL", "\"https://api.ipify.org?format=json\"")
     }
 
     buildTypes {
@@ -36,6 +39,7 @@ android {
         jvmTarget = "17"
     }
     buildFeatures {
+        buildConfig = true
         viewBinding = true
     }
 }
