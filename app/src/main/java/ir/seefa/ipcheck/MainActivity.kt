@@ -3,29 +3,28 @@ package ir.seefa.ipcheck
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import ir.seefa.ipcheck.databinding.ActivityMainBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
 import android.provider.ContactsContract
 import android.webkit.WebSettings
 import android.webkit.WebViewClient
-import java.util.Locale
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import ir.seefa.ipcheck.data.IpInfo
 import ir.seefa.ipcheck.data.IpRepository
-import androidx.core.content.edit
+import ir.seefa.ipcheck.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val prefs by lazy { getSharedPreferences("ipcheck_prefs", Context.MODE_PRIVATE) }
+    private val prefs by lazy { getSharedPreferences("ipcheck_prefs", MODE_PRIVATE) }
     private val phoneKey = "phone_number"
     private val repository = IpRepository()
     private var lastInfo: IpInfo? = null
@@ -159,26 +158,43 @@ class MainActivity : AppCompatActivity() {
     private fun copyIpToClipboard() {
         val ipText = binding.ipValue.text?.toString().orEmpty()
         if (ipText.isBlank() || ipText == "—") return
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager?
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager?
         clipboard?.setPrimaryClip(ClipData.newPlainText("IP", ipText))
-        android.widget.Toast.makeText(this, getString(R.string.ip_copied), android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(
+            this,
+            getString(R.string.ip_copied),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun savePhoneNumber() {
         val phone = binding.phoneInput.text?.toString()?.trim().orEmpty()
         prefs.edit { putString(phoneKey, phone) }
-        android.widget.Toast.makeText(this, getString(R.string.number_saved), android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(
+            this,
+            getString(R.string.number_saved),
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
     }
 
+    @SuppressLint("QueryPermissionsNeeded")
     private fun sendIpToPhone() {
         val ipText = binding.ipValue.text?.toString().orEmpty()
         if (ipText.isBlank() || ipText == "—") {
-            android.widget.Toast.makeText(this, getString(R.string.missing_ip), android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                this,
+                getString(R.string.missing_ip),
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
             return
         }
         val phone = binding.phoneInput.text?.toString()?.trim().orEmpty()
         if (phone.isBlank()) {
-            android.widget.Toast.makeText(this, getString(R.string.missing_number), android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                this,
+                getString(R.string.missing_number),
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
@@ -190,7 +206,11 @@ class MainActivity : AppCompatActivity() {
         if (intent.resolveActivity(packageManager) != null) {
             startActivity(intent)
         } else {
-            android.widget.Toast.makeText(this, "No SMS app found", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(
+                this,
+                "No SMS app found",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -212,7 +232,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun handlePickedContact(uri: Uri) {
         val contactId = try {
-            ContactsContract.Contacts.getLookupUri(contentResolver, uri)?.lastPathSegment?.toLongOrNull()
+            ContactsContract.Contacts.getLookupUri(
+                contentResolver,
+                uri
+            )?.lastPathSegment?.toLongOrNull()
                 ?: uri.lastPathSegment?.toLongOrNull()
         } catch (_: Exception) {
             null
@@ -258,7 +281,8 @@ class MainActivity : AppCompatActivity() {
         val south = lat - delta
         val east = lon + delta
         val north = lat + delta
-        val url = "https://www.openstreetmap.org/export/embed.html?bbox=$west,$south,$east,$north&layer=mapnik&marker=$lat,$lon"
+        val url =
+            "https://www.openstreetmap.org/export/embed.html?bbox=$west,$south,$east,$north&layer=mapnik&marker=$lat,$lon"
         binding.mapView.loadUrl(url)
     }
 
