@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IP Check</string>
+    <string name="title">Global IP lookup</string>
+    <string name="description">Check your current public IP and region</string>
+    <string name="check_now">Check now</string>
+    <string name="status_idle">Tap to start</string>
+    <string name="status_loading">Fetching IP info...</string>
+    <string name="status_success">Data fetched</string>
+    <string name="status_error">Could not fetch IP info</string>
+    <string name="ip_label">IP address</string>
+    <string name="ip_type_label">IP type</string>
+    <string name="location_label">Country / Region / City</string>
+    <string name="continent_label">Continent</string>
+    <string name="timezone_label">Time zone</string>
+    <string name="org_label">Organization</string>
+    <string name="isp_label">ISP</string>
+    <string name="coordinates_label">Coordinates</string>
+    <string name="copy_ip">Copy IP</string>
+    <string name="ip_copied">IP copied to clipboard</string>
+    <string name="phone_label">Notify number</string>
+    <string name="phone_hint">Enter phone number</string>
+    <string name="save_number">Save number</string>
+    <string name="send_ip">Send IP</string>
+    <string name="pick_contact">Pick contact</string>
+    <string name="number_saved">Number saved</string>
+    <string name="missing_number">Enter a number first</string>
+    <string name="missing_ip">Fetch IP first</string>
+    <string name="contacts_permission_denied">Contacts permission needed to pick a number</string>
+    <string name="contact_pick_failed">Could not read contact number</string>
+    <string name="missing_coordinates">No coordinates available</string>
+    <string name="map_label">Map preview</string>
+</resources>
